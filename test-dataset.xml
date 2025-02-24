@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+    <cmc_sbsb_subsc SBSB_ID="SUB123" GRGR_CK="GRP001" SBSB_CK="1"/>
+    <cmc_meme_member MEME_CK="1" SBSB_CK="1"/>
+    <cmc_mepe_prcs_elig MEPE_EFF_DT="2024-01-01" MEPE_TERM_DT="2024-12-31" GRGR_CK="GRP001" CSCPI_ID="CSPI123"
+                        MEME_CK="1"/>
+    <cmc_cspi_cs_plan GRGR_CK="GRP001" CSCS_ID="CSCS123" CSPI_ID="CSPI123" CSPD_CAT="CAT123" CSPI_EFF_DT="2024-01-01"
+                      CSPI_TERM_DT="2024-12-31" CSPI_ITS_PREFIX="ABC"/>
+    <cmc_cspi_cs_plan GRGR_CK="GRGR123" CSCS_ID="CSCS123" CSPI_ID="CSPI123" CSPD_CAT="CAT1" CSPI_ITS_PREFIX="PREFIX1"
+                      CSPI_EFF_DT="2023-01-01" CSPI_TERM_DT="2023-12-31"/>
+    <cmc_cspi_cs_plan GRGR_CK="GRGR456" CSCS_ID="CSCS456" CSPI_ID="CSPI456" CSPD_CAT="CAT2" CSPI_ITS_PREFIX="PREFIX2"
+                      CSPI_EFF_DT="2023-01-01" CSPI_TERM_DT="2023-12-31"/>
+</dataset>
