@@ -1,0 +1,135 @@
+pom
+
+<dependencies>
+    <!-- DBUnit -->
+    <dependency>
+        <groupId>org.dbunit</groupId>
+        <artifactId>dbunit</artifactId>
+        <version>2.7.3</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- H2 Database (for in-memory testing) -->
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>2.1.214</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- JUnit 5 -->
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>5.8.1</version>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>5.8.1</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+
+
+FacetsMemberDaoImplTest 
+
+
+package org.example;
+
+import org.dbunit.DBTestCase;
+import org.dbunit.PropertiesBasedJdbcDatabaseTester;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+import org.dbunit.operation.DatabaseOperation;
+import org.example.dto.FacetsMemberAmerigroupIDDto;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class FacetsMemberDaoImplTest extends DBTestCase {
+
+    private Connection connection;
+    private FacetsMemberDaoImpl facetsMemberDao;
+
+    public FacetsMemberDaoImplTest() {
+        System.setProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.h2.Driver");
+        System.setProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+        System.setProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_USERNAME, "sa");
+        System.setProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_PASSWORD, "");
+    }
+
+    @Override
+    protected IDataSet getDataSet() throws Exception {
+        // Load the dataset from the XML file
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("test-data.xml");
+        return new FlatXmlDataSetBuilder().build(inputStream);
+    }
+
+    @Override
+    protected DatabaseOperation getSetUpOperation() {
+        // CLEAN_INSERT ensures the database is clean before inserting the test data
+        return DatabaseOperation.CLEAN_INSERT;
+    }
+
+    @Override
+    protected DatabaseOperation getTearDownOperation() {
+        // NONE ensures the database is not modified after the test
+        return DatabaseOperation.NONE;
+    }
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        super.setUp();
+
+        // Initialize the H2 in-memory database connection
+        connection = DriverManager.getConnection(
+            "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+            "sa",
+            ""
+        );
+
+        // Initialize the DAO
+        facetsMemberDao = new FacetsMemberDaoImpl();
+    }
+
+    @Test
+    public void testGetIdAndPrefixBySbsbIdDateAndPrefix() throws Exception {
+        // Arrange
+        String subscriberID = "12345";
+        String prefix = "TEST";
+        Date searchStartDate = new Date();
+        Date searchEndDate = new Date();
+
+        // Act
+        List<FacetsMemberAmerigroupIDDto> result = facetsMemberDao.getIdAndPrefixBySbsbIdDateAndPrefix(subscriberID, prefix, searchStartDate, searchEndDate);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals("12345", result.get(0).amerigroupID);
+        assertEquals("GRP123", result.get(0).groupID);
+    }
+}
+
+
+
+src/test/resources/test-data.xml
+
+<dataset>
+    <cmc_sbsb_subsc SBSB_ID="12345" GRGR_CK="GRP123" sbsb_ck="1"/>
+    <cmc_meme_member meme_ck="1" sbsb_ck="1"/>
+    <cmc_mepe_prcs_elig meme_ck="1" GRGR_CK="GRP123" cscs_ID="1" cspi_ID="1" CSPD_CAT="CAT1" MEPE_EFF_DT="2023-01-01" MEPE_TERM_DT="2023-12-31"/>
+    <CMC_CSPI_CS_PLAN GRGR_CK="GRP123" cscs_ID="1" cspi_ID="1" CSPD_CAT="CAT1" CSPI_ITS_PREFIX="TEST" CSPI_EFF_DT="2023-01-01" CSPI_TERM_DT="2023-12-31"/>
+</dataset>
+
+
+
+http://localhost:8080/h2-console
