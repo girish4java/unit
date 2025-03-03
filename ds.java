@@ -134,3 +134,163 @@ spring.datasource.username=sa
 spring.datasource.password=
 spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
 spring.h2.console.enabled=true
+
+
+
+
+
+    *************************
+
+
+
+    <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-jdbc</artifactId>
+</dependency>
+
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <scope>runtime</scope>
+</dependency>
+
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+
+src/test/resources/application.properties
+    spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.datasource.platform=h2
+spring.sql.init.mode=always
+spring.h2.console.enabled=true
+
+
+    src/test/resources/schema.sql:
+CREATE TABLE cmc_sbsb_subsc (
+    SBSB_ID VARCHAR(50) PRIMARY KEY,
+    GRGR_CK VARCHAR(50)
+);
+
+CREATE TABLE cmc_meme_member (
+    meme_ck INT PRIMARY KEY,
+    sbsb_ck VARCHAR(50),
+    FOREIGN KEY (sbsb_ck) REFERENCES cmc_sbsb_subsc(SBSB_ID)
+);
+
+CREATE TABLE cmc_mepe_prcs_elig (
+    mepe_ck INT PRIMARY KEY,
+    meme_ck INT,
+    GRGR_CK VARCHAR(50),
+    cscs_ID VARCHAR(50),
+    cspi_ID VARCHAR(50),
+    CSPD_CAT VARCHAR(50),
+    MEPE_EFF_DT DATE,
+    MEPE_TERM_DT DATE,
+    FOREIGN KEY (meme_ck) REFERENCES cmc_meme_member(meme_ck)
+);
+
+CREATE TABLE CMC_CSPI_CS_PLAN (
+    GRGR_CK VARCHAR(50),
+    cscs_ID VARCHAR(50),
+    cspi_ID VARCHAR(50),
+    CSPD_CAT VARCHAR(50),
+    CSPI_ITS_PREFIX VARCHAR(50),
+    CSPI_EFF_DT DATE,
+    CSPI_TERM_DT DATE,
+    PRIMARY KEY (GRGR_CK, cscs_ID, cspi_ID, CSPD_CAT)
+);
+
+
+
+
+src/test/resources/data.sql
+
+
+    INSERT INTO cmc_sbsb_subsc (SBSB_ID, GRGR_CK) VALUES ('123456', 'G001');
+
+INSERT INTO cmc_meme_member (meme_ck, sbsb_ck) VALUES (1, '123456');
+
+INSERT INTO cmc_mepe_prcs_elig (mepe_ck, meme_ck, GRGR_CK, cscs_ID, cspi_ID, CSPD_CAT, MEPE_EFF_DT, MEPE_TERM_DT)
+VALUES (1, 1, 'G001', 'CS001', 'CSP001', 'CAT001', '2024-01-01', '2024-12-31');
+
+INSERT INTO CMC_CSPI_CS_PLAN (GRGR_CK, cscs_ID, cspi_ID, CSPD_CAT, CSPI_ITS_PREFIX, CSPI_EFF_DT, CSPI_TERM_DT)
+VALUES ('G001', 'CS001', 'CSP001', 'CAT001', 'PRE001', '2024-01-01', '2024-12-31');
+
+
+
+src/test/java/org/example/FacetsMemberDaoImplTest.java
+
+
+
+    package org.example;
+
+import org.example.dto.FacetsMemberAmerigroupIDDto;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import javax.sql.DataSource;
+import java.sql.Connection;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(SpringExtension.class)
+@SpringBootTest
+@Import(FacetsMemberDaoImpl.class)
+class FacetsMemberDaoImplTest {
+
+    @Autowired
+    private FacetsMemberDaoImpl facetsMemberDao;
+
+    @Autowired
+    private DataSource dataSource;
+
+    @BeforeEach
+    void setupDatabase() throws Exception {
+        try (Connection conn = dataSource.getConnection()) {
+            assertNotNull(conn);
+        }
+    }
+
+    @Test
+    void testGetIdAndPrefixBySbsbIdDateAndPrefix() {
+        String subscriberID = "123456";
+        String prefix = "PRE001";
+        Date searchStartDate = new Date(2024, 0, 1); // 2024-01-01
+        Date searchEndDate = new Date(2024, 11, 31); // 2024-12-31
+
+        List<FacetsMemberAmerigroupIDDto> result =
+                facetsMemberDao.getIdAndPrefixBySbsbIdDateAndPrefix(subscriberID, prefix, searchStartDate, searchEndDate);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+
+        FacetsMemberAmerigroupIDDto dto = result.get(0);
+        assertEquals("123456", dto.amerigroupID);
+        assertEquals("G001", dto.groupID);
+    }
+}
+
+
+
+
+
+
+    
+
+
+
+
+    
