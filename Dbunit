@@ -289,3 +289,108 @@ public class FacetsMemberDaoImplTest extends DBTestCase {
 testGetIdAndPrefixBySbsbIdDateAndPrefix on instance testGetIdAndPrefixBySbsbIdDateAndPrefix(FacetsMemberDaoImplTest)(FacetsMemberDaoImplTest)  Time elapsed: 2.532 sec  <<< FAILURE!
 org.dbunit.dataset.NoSuchTableException: CMC_CSPI_CS_PLAN
         at FacetsMemberDaoImplTest.setUp(FacetsMemberDaoImplTest.java:55)
+
+
+
+
+
+
+
+*********** 3
+
+
+package org.example;
+
+import org.dbunit.DBTestCase;
+import org.dbunit.PropertiesBasedJdbcDatabaseTester;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+import org.dbunit.operation.DatabaseOperation;
+import org.example.dto.FacetsMemberAmerigroupIDDto;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class FacetsMemberDaoImplTest extends DBTestCase {
+
+    private Connection connection;
+    private FacetsMemberDaoImpl facetsMemberDao;
+
+    public FacetsMemberDaoImplTest() {
+        System.setProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_DRIVER_CLASS, "org.h2.Driver");
+        System.setProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_CONNECTION_URL, "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE");
+        System.setProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_USERNAME, "sa");
+        System.setProperty(PropertiesBasedJdbcDatabaseTester.DBUNIT_PASSWORD, "");
+    }
+
+    @Override
+    protected IDataSet getDataSet() throws Exception {
+        // Load the dataset from the XML file
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("test-data.xml");
+        return new FlatXmlDataSetBuilder().build(inputStream);
+    }
+
+    @Override
+    protected DatabaseOperation getSetUpOperation() {
+        // CLEAN_INSERT ensures the database is clean before inserting the test data
+        return DatabaseOperation.CLEAN_INSERT;
+    }
+
+    @Override
+    protected DatabaseOperation getTearDownOperation() {
+        // NONE ensures the database is not modified after the test
+        return DatabaseOperation.NONE;
+    }
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        super.setUp();
+
+        // Initialize the H2 in-memory database connection
+        connection = DriverManager.getConnection(
+            "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+            "sa",
+            ""
+        );
+
+        // Execute the schema.sql script to create tables
+        try (Statement statement = connection.createStatement()) {
+            InputStream schemaStream = getClass().getClassLoader().getResourceAsStream("schema.sql");
+            if (schemaStream == null) {
+                throw new RuntimeException("schema.sql not found in the classpath!");
+            }
+            String schemaSql = new String(schemaStream.readAllBytes(), StandardCharsets.UTF_8);
+            System.out.println("Executing schema.sql:\n" + schemaSql); // Log the SQL script
+            statement.execute(schemaSql);
+        }
+
+        // Initialize the DAO
+        facetsMemberDao = new FacetsMemberDaoImpl();
+    }
+
+    @Test
+    public void testGetIdAndPrefixBySbsbIdDateAndPrefix() throws Exception {
+        // Arrange
+        String subscriberID = "12345";
+        String prefix = "TEST";
+        Date searchStartDate = new Date();
+        Date searchEndDate = new Date();
+
+        // Act
+        List<FacetsMemberAmerigroupIDDto> result = facetsMemberDao.getIdAndPrefixBySbsbIdDateAndPrefix(subscriberID, prefix, searchStartDate, searchEndDate);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals("12345", result.get(0).amerigroupID);
+        assertEquals("GRP123", result.get(0).groupID);
+    }
+}
