@@ -287,6 +287,71 @@ class FacetsMemberDaoImplTest {
 
 
 
+****************
+
+    package org.example;
+
+import org.example.dto.FacetsMemberAmerigroupIDDto;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest
+@ActiveProfiles("test") // Ensures H2 properties are used
+class FacetsMemberDaoImplTest {
+
+    @Autowired
+    private FacetsMemberDaoImpl facetsMemberDao;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @Test
+    void testGetIdAndPrefixBySbsbIdDateAndPrefix() {
+        // Insert test data
+        jdbcTemplate.execute("CREATE TABLE cmc_sbsb_subsc (SBSB_ID VARCHAR(10), GRGR_CK VARCHAR(10), SBSB_CK INT PRIMARY KEY)");
+        jdbcTemplate.execute("INSERT INTO cmc_sbsb_subsc (SBSB_ID, GRGR_CK, SBSB_CK) VALUES ('123456', 'G001', 1)");
+
+        jdbcTemplate.execute("CREATE TABLE cmc_meme_member (MEME_CK INT PRIMARY KEY, SBSB_CK INT)");
+        jdbcTemplate.execute("INSERT INTO cmc_meme_member (MEME_CK, SBSB_CK) VALUES (1, 1)");
+
+        jdbcTemplate.execute("CREATE TABLE cmc_mepe_prcs_elig (MEPE_CK INT PRIMARY KEY, MEME_CK INT, GRGR_CK VARCHAR(10), CSCS_ID VARCHAR(10), CSPI_ID VARCHAR(10), CSPD_CAT VARCHAR(10), MEPE_EFF_DT DATE, MEPE_TERM_DT DATE)");
+        jdbcTemplate.execute("INSERT INTO cmc_mepe_prcs_elig (MEPE_CK, MEME_CK, GRGR_CK, CSCS_ID, CSPI_ID, CSPD_CAT, MEPE_EFF_DT, MEPE_TERM_DT) VALUES (1, 1, 'G001', 'C001', 'P001', 'CAT1', '2024-01-01', '2025-12-31')");
+
+        jdbcTemplate.execute("CREATE TABLE CMC_CSPI_CS_PLAN (GRGR_CK VARCHAR(10), CSCS_ID VARCHAR(10), CSPI_ID VARCHAR(10), CSPD_CAT VARCHAR(10), CSPI_ITS_PREFIX VARCHAR(10), CSPI_EFF_DT DATE, CSPI_TERM_DT DATE)");
+        jdbcTemplate.execute("INSERT INTO CMC_CSPI_CS_PLAN (GRGR_CK, CSCS_ID, CSPI_ID, CSPD_CAT, CSPI_ITS_PREFIX, CSPI_EFF_DT, CSPI_TERM_DT) VALUES ('G001', 'C001', 'P001', 'CAT1', 'G001', '2024-01-01', '2025-12-31')");
+
+        // Execute test
+        List<FacetsMemberAmerigroupIDDto> result = facetsMemberDao.getIdAndPrefixBySbsbIdDateAndPrefix("123456", "G001", new Date(), new Date());
+
+        // Assertions
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        assertEquals("123456", result.get(0).amerigroupID);
+        assertEquals("G001", result.get(0).groupID);
+    }
+}
+
+
+application-test.properties
+
+
+# H2 Database Configuration
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+spring.datasource.driverClassName=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.datasource.platform=h2
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console
 
     
 
