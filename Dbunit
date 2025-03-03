@@ -283,3 +283,9 @@ public class FacetsMemberDaoImplTest extends DBTestCase {
         assertEquals("GRP123", result.get(0).groupID);
     }
 }
+
+
+
+testGetIdAndPrefixBySbsbIdDateAndPrefix on instance testGetIdAndPrefixBySbsbIdDateAndPrefix(FacetsMemberDaoImplTest)(FacetsMemberDaoImplTest)  Time elapsed: 2.532 sec  <<< FAILURE!
+org.dbunit.dataset.NoSuchTableException: CMC_CSPI_CS_PLAN
+        at FacetsMemberDaoImplTest.setUp(FacetsMemberDaoImplTest.java:55)
