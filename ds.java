@@ -449,6 +449,110 @@ spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
 spring.h2.console.enabled=true
 
 
+**************************************** DB2
+
+
+
+
+    package org.example;
+
+import org.example.dto.FacetsMemberAmerigroupIDDto;
+import org.dbunit.IDatabaseTester;
+import org.dbunit.JdbcDatabaseTester;
+import org.dbunit.database.DatabaseDataSourceConnection;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+import org.dbunit.operation.DatabaseOperation;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+
+import javax.sql.DataSource;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(SpringExtension.class)
+@JdbcTest
+@Import(FacetsMemberDaoImpl.class) // Import the DAO for testing
+class FacetsMemberDaoImplTest {
+
+    @Autowired
+    private DataSource dataSource;
+
+    @Autowired
+    private FacetsMemberDaoImpl dao;
+
+    @BeforeEach
+    void setupDatabase() throws Exception {
+        try (var connection = new DatabaseDataSourceConnection(dataSource)) {
+            InputStream datasetStream = getClass().getClassLoader().getResourceAsStream("test-dataset.xml");
+            assertNotNull(datasetStream, "Dataset file not found!");
+
+            IDataSet dataset = new FlatXmlDataSetBuilder().build(datasetStream);
+            DatabaseOperation.CLEAN_INSERT.execute(connection, dataset);
+        }
+    }
+
+    @Test
+    void testGetIdAndPrefixBySbsbIdDateAndPrefix() {
+        List<FacetsMemberAmerigroupIDDto> result = dao.getIdAndPrefixBySbsbIdDateAndPrefix("123456", "PRE123", new Date(), new Date());
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        FacetsMemberAmerigroupIDDto dto = result.get(0);
+        assertEquals("123456", dto.amerigroupID);
+        assertEquals("G001", dto.groupID);
+    }
+}
+
+
+
+test-dataset.xml
+
+
+    <?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+    <cmc_sbsb_subsc SBSB_ID="123456" GRGR_CK="G001" SBSB_CK="1"/>
+    <cmc_meme_member MEME_CK="1" SBSB_CK="1"/>
+    <cmc_mepe_prcs_elig MEPE_EFF_DT="2024-01-01" MEPE_TERM_DT="2025-12-31" MEME_CK="1" GRGR_CK="G001" CSCS_ID="C001" CSPI_ID="P001" CSPD_CAT="D001"/>
+    <CMC_CSPI_CS_PLAN GRGR_CK="G001" CSCS_ID="C001" CSPI_ID="P001" CSPD_CAT="D001" CSPI_ITS_PREFIX="PRE123" CSPI_EFF_DT="2024-01-01" CSPI_TERM_DT="2025-12-31"/>
+</dataset>
+
+
+
+    pom.xml
+
+
+    <dependencies>
+    <!-- Spring Boot Testing -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- H2 Database -->
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- DBUnit for Database Testing -->
+    <dependency>
+        <groupId>org.dbunit</groupId>
+        <artifactId>dbunit</artifactId>
+        <version>2.7.2</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
 
 
     
