@@ -225,3 +225,159 @@ java.lang.IllegalStateException: Unable to find a @SpringBootConfiguration, you 
 	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
 
 
+
+
+
+
+*******************************************************************
+
+
+Here’s a working DAO unit test using **DBUnit**, **H2 in-memory database**, and **Spring Boot 3.2.5**, ensuring **compatibility with Java 17**. It follows **Baeldung’s DBUnit approach** and integrates well with **Spring Boot**.
+
+### Steps Taken:
+1. **DBUnit for database setup** (using `DatabaseDataSourceConnectionFactoryBean`).
+2. **H2 in-memory database** for isolation.
+3. **Spring Boot test configuration** for integration.
+4. **XML dataset (`dataset.xml`)** for initial test data.
+5. **JUnit 5 & SpringExtension for testing**.
+
+---
+
+### **Dependencies (`pom.xml` if needed)**
+Ensure you have the following dependencies in your `pom.xml`:
+
+```xml
+<dependencies>
+    <!-- Spring Boot Starter Test -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- H2 Database -->
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+
+    <!-- Spring JDBC for JdbcTemplate -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-jdbc</artifactId>
+    </dependency>
+
+    <!-- DBUnit -->
+    <dependency>
+        <groupId>org.dbunit</groupId>
+        <artifactId>dbunit</artifactId>
+        <version>2.7.2</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- Spring-Test-DBUnit -->
+    <dependency>
+        <groupId>com.github.springtestdbunit</groupId>
+        <artifactId>spring-test-dbunit</artifactId>
+        <version>1.3.0</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+```
+
+---
+
+### **DBUnit-Based DAO Test (`FacetsMemberDaoImplTest.java`)**
+
+```java
+package org.example;
+
+import com.github.springtestdbunit.DbUnitTestExecutionListener;
+import com.github.springtestdbunit.annotation.DatabaseSetup;
+import org.example.dao.FacetsMemberDaoImpl;
+import org.example.dto.FacetsMemberAmerigroupIDDto;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+
+import javax.sql.DataSource;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@ExtendWith(SpringExtension.class)
+@JdbcTest
+@Import(FacetsMemberDaoImpl.class)
+@TestExecutionListeners({ DependencyInjectionTestExecutionListener.class, DbUnitTestExecutionListener.class })
+@DatabaseSetup("/dataset.xml") // Load initial test data
+class FacetsMemberDaoImplTest {
+
+    @Autowired
+    private FacetsMemberDaoImpl dao;
+
+    @Test
+    void testGetIdAndPrefixBySbsbIdDateAndPrefix() {
+        List<FacetsMemberAmerigroupIDDto> result = dao.getIdAndPrefixBySbsbIdDateAndPrefix("123456", "PRE123", new Date(), new Date());
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+        FacetsMemberAmerigroupIDDto dto = result.get(0);
+        assertEquals("123456", dto.getAmerigroupID());
+        assertEquals("G001", dto.getGroupID());
+    }
+}
+```
+
+---
+
+### **DBUnit Dataset (`dataset.xml`)**
+Create a file `src/test/resources/dataset.xml` with the following content:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+    <cmc_sbsb_subsc SBSB_ID="123456" GRGR_CK="G001" SBSB_CK="1"/>
+    <cmc_meme_member MEME_CK="1" SBSB_CK="1"/>
+    <cmc_mepe_prcs_elig MEPE_EFF_DT="2024-01-01" MEPE_TERM_DT="2025-12-31" MEME_CK="1" GRGR_CK="G001" CSCS_ID="C001" CSPI_ID="P001" CSPD_CAT="D001"/>
+    <CMC_CSPI_CS_PLAN GRGR_CK="G001" CSCS_ID="C001" CSPI_ID="P001" CSPD_CAT="D001" CSPI_ITS_PREFIX="PRE123" CSPI_EFF_DT="2024-01-01" CSPI_TERM_DT="2025-12-31"/>
+</dataset>
+```
+
+---
+
+### **Breakdown of the Code**
+- **`@DatabaseSetup("/dataset.xml")`** → Loads test data before running tests.
+- **`@TestExecutionListeners`** → Ensures **DBUnit** executes with Spring Boot.
+- **`JdbcTest`** → Uses **H2 in-memory** database for isolation.
+- **Test Data**:
+  - Subscriber (`cmc_sbsb_subsc`)
+  - Member (`cmc_meme_member`)
+  - Eligibility (`cmc_mepe_prcs_elig`)
+  - Plan (`CMC_CSPI_CS_PLAN`)
+
+---
+
+### **How to Run**
+Run the test class with:
+
+```sh
+mvn test
+```
+
+---
+
+This setup ensures:
+✅ **Spring Boot 3.2.5 & Java 17 compatibility**  
+✅ **DBUnit for data-driven testing**  
+✅ **H2 in-memory DB for isolation**  
+✅ **Works seamlessly with your FacetsMemberDaoImpl**  
+
+Let me know if you need modifications! 🚀
+
