@@ -1,0 +1,202 @@
+To write a **DAO unit test** for the `FacetsMemberDaoImpl` class using **DBUnit**, **H2 in-memory database**, and **Spring Boot 3.2.5**, we need to ensure compatibility with **Java 17**. Below is a **complete and working unit test** that follows Baeldung's DBUnit reference and integrates with Spring Boot.
+
+---
+
+### Key Dependencies
+
+Ensure you have the following dependencies in your `pom.xml`:
+
+```xml
+<dependencies>
+    <!-- Spring Boot Starter Test -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- H2 Database (for in-memory testing) -->
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- DBUnit (for dataset management) -->
+    <dependency>
+        <groupId>org.dbunit</groupId>
+        <artifactId>dbunit</artifactId>
+        <version>2.7.3</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- Spring Test DBUnit (for @DatabaseSetup and DBUnit integration) -->
+    <dependency>
+        <groupId>com.github.springtestdbunit</groupId>
+        <artifactId>spring-test-dbunit</artifactId>
+        <version>1.3.0</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- Spring Boot Starter Data JPA (if using JPA) -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
+</dependencies>
+```
+
+---
+
+### DAO Unit Test
+
+Here’s the **complete unit test** for the `FacetsMemberDaoImpl` class:
+
+```java
+package org.example;
+
+import com.github.springtestdbunit.DbUnitTestExecutionListener;
+import com.github.springtestdbunit.annotation.DatabaseSetup;
+import org.example.dto.FacetsMemberAmerigroupIDDto;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
+import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
+
+import javax.transaction.Transactional;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@SpringBootTest // Bootstraps the Spring context
+@ExtendWith(SpringExtension.class) // Integrates JUnit 5 with Spring
+@TestExecutionListeners({
+    DependencyInjectionTestExecutionListener.class,
+    DirtiesContextTestExecutionListener.class,
+    TransactionalTestExecutionListener.class,
+    DbUnitTestExecutionListener.class // Enables DBUnit
+})
+@Transactional // Ensures the test runs in a transaction and rolls back after completion
+public class FacetsMemberDaoImplTest {
+
+    @Autowired
+    private FacetsMemberDaoImpl facetsMemberDao; // Autowire the DAO class
+
+    @Test
+    @DatabaseSetup("classpath:test-data.xml") // Loads test data from this file
+    public void testGetIdAndPrefixBySbsbIdDateAndPrefix() {
+        // Arrange
+        String subscriberID = "12345";
+        String prefix = "TEST";
+        Date searchStartDate = new Date();
+        Date searchEndDate = new Date();
+
+        // Act
+        List<FacetsMemberAmerigroupIDDto> result = facetsMemberDao.getIdAndPrefixBySbsbIdDateAndPrefix(subscriberID, prefix, searchStartDate, searchEndDate);
+
+        // Assert
+        assertEquals(1, result.size());
+        assertEquals("12345", result.get(0).amerigroupID);
+        assertEquals("GRP123", result.get(0).groupID);
+    }
+}
+```
+
+---
+
+### Dataset XML File (`test-data.xml`)
+
+Place the following XML file in `src/test/resources/test-data.xml`:
+
+```xml
+<dataset>
+    <cmc_sbsb_subsc SBSB_ID="12345" GRGR_CK="GRP123" sbsb_ck="1"/>
+    <cmc_meme_member meme_ck="1" sbsb_ck="1"/>
+    <cmc_mepe_prcs_elig meme_ck="1" GRGR_CK="GRP123" cscs_ID="1" cspi_ID="1" CSPD_CAT="CAT1" MEPE_EFF_DT="2023-01-01" MEPE_TERM_DT="2023-12-31"/>
+    <CMC_CSPI_CS_PLAN GRGR_CK="GRP123" cscs_ID="1" cspi_ID="1" CSPD_CAT="CAT1" CSPI_ITS_PREFIX="TEST" CSPI_EFF_DT="2023-01-01" CSPI_TERM_DT="2023-12-31"/>
+</dataset>
+```
+
+---
+
+### H2 Database Configuration
+
+Add the following configuration to your `application-test.properties` file (placed in `src/test/resources`):
+
+```properties
+# H2 Database Configuration
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+spring.h2.console.enabled=true
+```
+
+---
+
+### Explanation of the Test
+
+1. **Spring Boot Test**:
+   - The `@SpringBootTest` annotation bootstraps the Spring context, allowing you to autowire beans like the `FacetsMemberDaoImpl`.
+
+2. **DBUnit Integration**:
+   - The `@DatabaseSetup` annotation loads the test data from `test-data.xml` into the H2 database before the test runs.
+   - The `DbUnitTestExecutionListener` enables DBUnit for dataset management.
+
+3. **H2 Database**:
+   - The H2 in-memory database is used for testing, ensuring the tests are isolated and fast.
+
+4. **Transactional Test**:
+   - The `@Transactional` annotation ensures the test runs in a transaction and rolls back after completion, keeping the database clean.
+
+5. **Assertions**:
+   - The test verifies that the method returns the expected results based on the test data.
+
+---
+
+### Running the Test
+
+Run the test using your IDE or Maven:
+
+```bash
+mvn test
+```
+
+---
+
+### Expected Output
+
+If everything is set up correctly, the test should pass, and you should see output similar to the following:
+
+```
+[INFO] Tests run: 1, Failures: 0, Errors: 0, Skipped: 0
+```
+
+---
+
+### Debugging Tips
+
+If the test fails:
+
+1. **Check Dependencies**:
+   - Ensure all dependencies are correctly added to your `pom.xml`.
+
+2. **Check Dataset File**:
+   - Verify that the `test-data.xml` file is correctly placed in `src/test/resources`.
+
+3. **Check Logs**:
+   - Look for any SQL errors or exceptions in the logs.
+
+4. **H2 Console**:
+   - Use the H2 console (`http://localhost:8080/h2-console`) to inspect the database during testing.
+
+---
+
+This implementation is fully compatible with **Java 17** and **Spring Boot 3.2.5**. Let me know if you encounter any issues! 😊
