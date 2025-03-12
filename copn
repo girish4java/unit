@@ -178,3 +178,55 @@ Make sure to include these dependencies:
 ```
 
 This setup should cover everything you need to test the `FacetsMemberDaoImpl` class with Spring Boot, H2 in-memory database, and DBUnit. Let me know if you have further questions!
+
+
+
+
+
+
+
+
+
+
+
+
+package org.example;
+
+import org.example.dto.FacetsMemberAmerigroupIDDto;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.jdbc.Sql;
+
+import java.util.Date;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@SpringBootTest
+@Sql(scripts = {"/schema.sql", "/data.sql"}) // Automatically loads schema and initial data for tests
+class FacetsMemberDaoImplTest {
+
+    @Autowired
+    private FacetsMemberDaoImpl dao; // DAO being tested
+
+    @Test
+    void testGetIdAndPrefixBySbsbIdDateAndPrefix() {
+        // Test input
+        String subscriberID = "123456";
+        String prefix = "PRE";
+        Date startDate = new Date();
+        Date endDate = new Date();
+
+        // Call the DAO method
+        List<FacetsMemberAmerigroupIDDto> result =
+                dao.getIdAndPrefixBySbsbIdDateAndPrefix(subscriberID, prefix, startDate, endDate);
+
+        // Assertions
+        assertThat(result).isNotNull();
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).amerigroupID).isEqualTo("123456");
+        assertThat(result.get(0).groupID).isEqualTo("GRGR001");
+    }
+}
+
