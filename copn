@@ -1,0 +1,180 @@
+Here's the complete setup you need for testing the `FacetsMemberDaoImpl` class using DBUnit, H2 in-memory database, and Spring Boot.
+
+---
+
+### Unit Test: `FacetsMemberDaoImplTest.java`
+```java
+package org.example;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.dbunit.DataSourceDatabaseTester;
+import org.dbunit.IDatabaseTester;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+import org.dbunit.operation.DatabaseOperation;
+import org.example.dto.FacetsMemberAmerigroupIDDto;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+
+import javax.sql.DataSource;
+import java.util.Date;
+import java.util.List;
+
+@JdbcTest
+@Import(FacetsMemberDaoImpl.class)
+class FacetsMemberDaoImplTest {
+
+    @Autowired
+    private FacetsMemberDaoImpl dao;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    private IDatabaseTester databaseTester;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        DataSource dataSource = new EmbeddedDatabaseBuilder()
+                .setType(EmbeddedDatabaseType.H2)
+                .addScript("schema.sql")
+                .addScript("data.sql")
+                .build();
+
+        databaseTester = new DataSourceDatabaseTester(dataSource);
+        databaseTester.setSetUpOperation(DatabaseOperation.CLEAN_INSERT);
+        databaseTester.setDataSet(new FlatXmlDataSetBuilder().build(
+                this.getClass().getResourceAsStream("/test-dataset.xml")));
+        databaseTester.onSetup();
+    }
+
+    @Test
+    void testGetIdAndPrefixBySbsbIdDateAndPrefix() {
+        String subscriberID = "123456";
+        String prefix = "PRE";
+        Date startDate = new Date();  // Adjust dates as needed
+        Date endDate = new Date();
+
+        List<FacetsMemberAmerigroupIDDto> result =
+                dao.getIdAndPrefixBySbsbIdDateAndPrefix(subscriberID, prefix, startDate, endDate);
+
+        assertThat(result).isNotNull();
+        assertThat(result).isNotEmpty();
+        assertThat(result.get(0).getAmerigroupID()).isEqualTo("123456");
+        assertThat(result.get(0).getGroupID()).isEqualTo("GRGR001");
+    }
+}
+```
+
+---
+
+### Schema File: `schema.sql`
+```sql
+CREATE TABLE cmc_sbsb_subsc (
+    SBSB_ID VARCHAR(20) PRIMARY KEY,
+    GRGR_CK VARCHAR(20),
+    sbsb_ck INT NOT NULL
+);
+
+CREATE TABLE cmc_meme_member (
+    meme_ck INT PRIMARY KEY,
+    sbsb_ck INT NOT NULL,
+    FOREIGN KEY (sbsb_ck) REFERENCES cmc_sbsb_subsc(sbsb_ck)
+);
+
+CREATE TABLE cmc_mepe_prcs_elig (
+    meme_ck INT NOT NULL,
+    GRGR_CK VARCHAR(20),
+    cscs_ID VARCHAR(20),
+    cspi_ID VARCHAR(20),
+    CSPD_CAT VARCHAR(20),
+    MEPE_EFF_DT DATE,
+    MEPE_TERM_DT DATE,
+    FOREIGN KEY (meme_ck) REFERENCES cmc_meme_member(meme_ck)
+);
+
+CREATE TABLE CMC_CSPI_CS_PLAN (
+    GRGR_CK VARCHAR(20),
+    cscs_ID VARCHAR(20),
+    cspi_ID VARCHAR(20),
+    CSPD_CAT VARCHAR(20),
+    CSPI_ITS_PREFIX VARCHAR(10),
+    CSPI_EFF_DT DATE,
+    CSPI_TERM_DT DATE
+);
+```
+
+---
+
+### Sample Data: `data.sql`
+```sql
+INSERT INTO cmc_sbsb_subsc (SBSB_ID, GRGR_CK, sbsb_ck)
+VALUES ('123456', 'GRGR001', 1);
+
+INSERT INTO cmc_meme_member (meme_ck, sbsb_ck)
+VALUES (100, 1);
+
+INSERT INTO cmc_mepe_prcs_elig (meme_ck, GRGR_CK, cscs_ID, cspi_ID, CSPD_CAT, MEPE_EFF_DT, MEPE_TERM_DT)
+VALUES (100, 'GRGR001', 'CSCS01', 'CSPI01', 'CAT1', '2025-01-01', '2025-12-31');
+
+INSERT INTO CMC_CSPI_CS_PLAN (GRGR_CK, cscs_ID, cspi_ID, CSPD_CAT, CSPI_ITS_PREFIX, CSPI_EFF_DT, CSPI_TERM_DT)
+VALUES ('GRGR001', 'CSCS01', 'CSPI01', 'CAT1', 'PRE', '2025-01-01', '2025-12-31');
+```
+
+---
+
+### DBUnit Test Dataset: `test-dataset.xml`
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+    <cmc_sbsb_subsc SBSB_ID="123456" GRGR_CK="GRGR001" sbsb_ck="1"/>
+    <cmc_meme_member meme_ck="100" sbsb_ck="1"/>
+    <cmc_mepe_prcs_elig
+        meme_ck="100"
+        GRGR_CK="GRGR001"
+        cscs_ID="CSCS01"
+        cspi_ID="CSPI01"
+        CSPD_CAT="CAT1"
+        MEPE_EFF_DT="2025-01-01"
+        MEPE_TERM_DT="2025-12-31"/>
+    <CMC_CSPI_CS_PLAN
+        GRGR_CK="GRGR001"
+        cscs_ID="CSCS01"
+        cspi_ID="CSPI01"
+        CSPD_CAT="CAT1"
+        CSPI_ITS_PREFIX="PRE"
+        CSPI_EFF_DT="2025-01-01"
+        CSPI_TERM_DT="2025-12-31"/>
+</dataset>
+```
+
+---
+
+### Maven Dependencies (`pom.xml`)
+Make sure to include these dependencies:
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.dbunit</groupId>
+        <artifactId>dbunit</artifactId>
+        <version>2.7.0</version>
+    </dependency>
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>runtime</scope>
+    </dependency>
+</dependencies>
+```
+
+This setup should cover everything you need to test the `FacetsMemberDaoImpl` class with Spring Boot, H2 in-memory database, and DBUnit. Let me know if you have further questions!
