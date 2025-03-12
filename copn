@@ -229,4 +229,161 @@ class FacetsMemberDaoImplTest {
         assertThat(result.get(0).groupID).isEqualTo("GRGR001");
     }
 }
+********************************************
 
+To create a DAO unit test for the `FacetsMemberDaoImpl` class using **DBUnit**, an **H2 in-memory database**, and **Spring Boot 3.2.5**, while ensuring compatibility with Java 17, we need to follow these steps:
+
+### Prerequisites
+1. **Dependencies**: Add the following dependencies to your `pom.xml` or `build.gradle`:
+   - Spring Boot Test
+   - H2 Database
+   - DBUnit
+   - JUnit 5 (comes with Spring Boot)
+   - Hamcrest (optional, for assertion clarity)
+
+   Example for `pom.xml`:
+   ```xml
+   <dependencies>
+       <!-- Spring Boot Test -->
+       <dependency>
+           <groupId>org.springframework.boot</groupId>
+           <artifactId>spring-boot-starter-test</artifactId>
+           <scope>test</scope>
+           <exclusions>
+               <exclusion>
+                   <groupId>org.junit.vintage</groupId>
+                   <artifactId>junit-vintage-engine</artifactId>
+               </exclusion>
+           </exclusions>
+       </dependency>
+
+       <!-- H2 Database -->
+       <dependency>
+           <groupId>com.h2database</groupId>
+           <artifactId>h2</artifactId>
+           <scope>test</scope>
+       </dependency>
+
+       <!-- DBUnit -->
+       <dependency>
+           <groupId>org.dbunit</groupId>
+           <artifactId>dbunit</artifactId>
+           <version>2.7.2</version>
+       </dependency>
+
+       <!-- Hamcrest -->
+       <dependency>
+           <groupId>org.hamcrest</groupId>
+           <artifactId>hamcrest</artifactId>
+           <scope>test</scope>
+       </dependency>
+   </dependencies>
+   ```
+
+2. **Database Schema**: Write a schema file (`schema.sql`) to define your H2 database schema. Make sure it matches the table structure used in `FacetsMemberDaoImpl`. For example:
+   ```sql
+   CREATE TABLE cmc_sbsb_subsc (
+       SBSB_ID VARCHAR(20) PRIMARY KEY,
+       GRGR_CK VARCHAR(20)
+   );
+
+   CREATE TABLE cmc_meme_member (
+       meme_ck INT PRIMARY KEY,
+       sbsb_ck INT
+   );
+
+   CREATE TABLE cmc_mepe_prcs_elig (
+       meme_ck INT,
+       GRGR_CK VARCHAR(20),
+       cscs_ID VARCHAR(20),
+       cspi_ID VARCHAR(20),
+       CSPD_CAT VARCHAR(20),
+       MEPE_EFF_DT TIMESTAMP,
+       MEPE_TERM_DT TIMESTAMP
+   );
+
+   CREATE TABLE CMC_CSPI_CS_PLAN (
+       GRGR_CK VARCHAR(20),
+       cscs_ID VARCHAR(20),
+       cspi_ID VARCHAR(20),
+       CSPD_CAT VARCHAR(20),
+       CSPD_TERM_DT TIMESTAMP,
+       CSPD_EFF_DT TIMESTAMP
+   );
+   ```
+
+3. **DBUnit Data File**: Create an XML dataset (`data.xml`) to populate initial data into the H2 database:
+   ```xml
+   <dataset>
+       <cmc_sbsb_subsc SBSB_ID="12345" GRGR_CK="A001" />
+       <cmc_meme_member meme_ck="1" sbsb_ck="12345" />
+       <cmc_mepe_prcs_elig meme_ck="1" GRGR_CK="A001" cscs_ID="CS1" cspi_ID="SP1" CSPD_CAT="C1" MEPE_EFF_DT="2023-01-01" MEPE_TERM_DT="2023-12-31" />
+       <CMC_CSPI_CS_PLAN GRGR_CK="A001" cscs_ID="CS1" cspi_ID="SP1" CSPD_CAT="C1" CSPD_EFF_DT="2023-01-01" CSPD_TERM_DT="2023-12-31" />
+   </dataset>
+   ```
+
+---
+
+### Example Test Code
+Here’s how the DAO unit test class might look:
+
+```java
+@SpringBootTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@TestExecutionListeners({
+    DependencyInjectionTestExecutionListener.class,
+    DbUnitTestExecutionListener.class
+})
+public class FacetsMemberDaoImplTest {
+
+    @Autowired
+    private FacetsMemberDaoImpl facetsMemberDao;
+
+    @Autowired
+    private DataSource dataSource;
+
+    @BeforeEach
+    public void setup() throws Exception {
+        // Initialize DBUnit
+        IDatabaseConnection connection = new DatabaseDataSourceConnection(dataSource);
+        FlatXmlDataSetBuilder builder = new FlatXmlDataSetBuilder();
+        IDataSet dataSet = builder.build(new File("src/test/resources/data.xml"));
+        DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+    }
+
+    @Test
+    public void testGetIdAndPrefixBySbsbIdDateAndPrefix() {
+        // Arrange
+        String subscriberID = "12345";
+        String prefix = "C1";
+        Date searchStartDate = Date.valueOf("2023-01-01");
+        Date searchEndDate = Date.valueOf("2023-12-31");
+
+        // Act
+        List<FacetsMemberAmerigroupIDDto> result = facetsMemberDao.getIdAndPrefixBySbsbIdDateAndPrefix(subscriberID, prefix, searchStartDate, searchEndDate);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        FacetsMemberAmerigroupIDDto dto = result.get(0);
+        assertEquals("12345", dto.getAmerigroupID());
+        assertEquals("A001", dto.getGroupID());
+    }
+}
+```
+
+---
+
+### Key Annotations and Configuration
+1. **`@SpringBootTest`**: Boots up the Spring application context for testing.
+2. **`@AutoConfigureTestDatabase`**: Prevents Spring Boot from replacing the `DataSource` with an in-memory database automatically.
+3. **DBUnit Listener**: The `DbUnitTestExecutionListener` ensures the `data.xml` file is loaded before tests run.
+
+---
+
+### Notes
+- **Integration with DBUnit**: Make sure the dataset and schema are properly aligned with your DAO logic.
+- **Database Connection**: Use `DatabaseDataSourceConnection` from DBUnit to interact with the H2 in-memory database.
+- **Java 17**: Ensure you’re using the latest compatible versions of dependencies to avoid conflicts.
+
+Let me know if you'd like assistance customizing this further!
