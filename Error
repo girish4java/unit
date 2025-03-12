@@ -229,5 +229,17 @@ org.springframework.jdbc.datasource.init.ScriptStatementFailedException: Failed 
 Caused by: org.h2.jdbc.JdbcSQLSyntaxErrorException: Attempt to define a second primary key; SQL statement:
 CREATE TABLE cmc_sbsb_subsc ( sbsb_ck INT PRIMARY KEY, SBSB_ID VARCHAR(20) PRIMARY KEY, GRGR_CK VARCHAR(20), sbsb_ck INT NOT NULL ) [90017-224]
 
+**************************
 
+java.lang.NullPointerException: Cannot invoke "java.util.Properties.getProperty(String)" because "com.amerigroup.utilities.EnvironmentResolver.envIdProperties" is null
+
+	at com.amerigroup.utilities.EnvironmentResolver.getEnvironmentId(EnvironmentResolver.java:142)
+	at com.amerigroup.facets.dao.FacetsMemberDaoImpl.getJndiNameByEnvironment(FacetsMemberDaoImpl.java:65)
+	at com.amerigroup.facets.dao.FacetsMemberDaoImpl.getDatasourceJndiName(FacetsMemberDaoImpl.java:59)
+	at com.amerigroup.daobase.ADatabaseDao.getConnection(ADatabaseDao.java:168)
+	at com.amerigroup.facets.dao.FacetsMemberDaoImpl.getIdAndPrefixBySbsbIdDateAndPrefix(FacetsMemberDaoImpl.java:122)
+	at FacetsMemberDaoImplTest.testGetIdAndPrefixBySbsbIdDateAndPrefix(FacetsMemberDaoImplTest.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
 
