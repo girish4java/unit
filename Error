@@ -1,4 +1,14 @@
+org.dbunit.dataset.NoSuchTableException: CMC_CSPI_CS_PLAN
 
+	at org.dbunit.database.DatabaseDataSet.getTableMetaData(DatabaseDataSet.java:305)
+	at org.dbunit.operation.DeleteAllOperation.execute(DeleteAllOperation.java:109)
+	at org.dbunit.operation.CompositeOperation.execute(CompositeOperation.java:79)
+	at FacetsMemberDaoImplTest.setup(FacetsMemberDaoImplTest.java:45)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+**************
 java.lang.IllegalStateException: Failed to load ApplicationContext for [WebMergedContextConfiguration@3811464b testClass = FacetsMemberDaoImplTest, locations = [], classes = [com.elevancehealth.dckr.microsvc.aksgbdsoamembereligibility.Application], contextInitializerClasses = [], activeProfiles = [], propertySourceDescriptors = [], propertySourceProperties = ["spring.profiles.active=test", "org.springframework.boot.test.context.SpringBootTestContextBootstrapper=true"], contextCustomizers = [org.springframework.boot.test.context.filter.ExcludeFilterContextCustomizer@60fa3495, org.springframework.boot.test.json.DuplicateJsonObjectContextCustomizerFactory$DuplicateJsonObjectContextCustomizer@69c79f09, org.springframework.boot.test.mock.mockito.MockitoContextCustomizer@0, org.springframework.boot.test.web.client.TestRestTemplateContextCustomizer@60bdf15d, org.springframework.boot.test.autoconfigure.actuate.observability.ObservabilityContextCustomizerFactory$DisableObservabilityContextCustomizer@1f, org.springframework.boot.test.autoconfigure.properties.PropertyMappingContextCustomizer@0, org.springframework.boot.test.autoconfigure.web.servlet.WebDriverContextCustomizer@593e824f, org.springframework.boot.test.context.SpringBootTestAnnotation@985f2513], resourceBasePath = "src/main/webapp", contextLoader = org.springframework.boot.test.context.SpringBootContextLoader, parent = null]
 
 	at org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate.loadContext(DefaultCacheAwareContextLoaderDelegate.java:180)
