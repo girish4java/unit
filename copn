@@ -387,3 +387,60 @@ public class FacetsMemberDaoImplTest {
 - **Java 17**: Ensure you’re using the latest compatible versions of dependencies to avoid conflicts.
 
 Let me know if you'd like assistance customizing this further!
+
+
+
+************************8
+@SpringBootTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@TestExecutionListeners({
+    DependencyInjectionTestExecutionListener.class,
+    DbUnitTestExecutionListener.class
+})
+public class FacetsMemberDaoImplTest {
+
+    @Autowired
+    private FacetsMemberDaoImpl facetsMemberDao;
+
+    @Autowired
+    private DataSource dataSource;
+
+    @BeforeEach
+    public void setup() throws Exception {
+        // Initialize DBUnit
+        IDatabaseConnection connection = new DatabaseDataSourceConnection(dataSource, "YOUR_SCHEMA_NAME"); // Replace with actual schema if necessary
+        
+        // Enable DBUnit custom data type factory (if required, e.g., for MySQL)
+        DatabaseConfig config = connection.getConfig();
+        config.setProperty(DatabaseConfig.PROPERTY_DATATYPE_FACTORY, new MySqlDataTypeFactory());
+
+        // Build and clean-insert dataset
+        FlatXmlDataSetBuilder builder = new FlatXmlDataSetBuilder();
+        builder.setColumnSensing(true); // Enable column sensing for dynamic datasets
+        IDataSet dataSet = builder.build(new File("src/test/resources/data.xml"));
+        
+        DatabaseOperation.CLEAN_INSERT.execute(connection, dataSet);
+    }
+
+    @Test
+    public void testGetIdAndPrefixBySbsbIdDateAndPrefix() {
+        // Arrange
+        String subscriberID = "12345";
+        String prefix = "C1";
+        Date searchStartDate = Date.valueOf("2023-01-01");
+        Date searchEndDate = Date.valueOf("2023-12-31");
+
+        // Act
+        List<FacetsMemberAmerigroupIDDto> result = 
+            facetsMemberDao.getIdAndPrefixBySbsbIdDateAndPrefix(
+                subscriberID, prefix, searchStartDate, searchEndDate);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        FacetsMemberAmerigroupIDDto dto = result.get(0);
+        assertEquals("12345", dto.getAmerigroupID());
+        assertEquals("A001", dto.getGroupID());
+    }
+}
+
