@@ -1,0 +1,161 @@
+<dependencies>
+    <!-- Spring Boot Starter Test -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-test</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- H2 Database for in-memory testing -->
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- DbUnit for database testing -->
+    <dependency>
+        <groupId>org.dbunit</groupId>
+        <artifactId>dbunit</artifactId>
+        <version>2.7.3</version>
+        <scope>test</scope>
+    </dependency>
+
+    <!-- SLF4J for logging -->
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.36</version>
+    </dependency>
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.2.11</version>
+        <scope>test</scope>
+    </dependency>
+</dependencies>
+
+
+
+
+
+public class FacetsMemberAmerigroupIDDto {
+    public String amerigroupID;
+    public String groupID;
+
+    // Getters and setters
+    public String getAmerigroupID() { return amerigroupID; }
+    public void setAmerigroupID(String amerigroupID) { this.amerigroupID = amerigroupID; }
+    public String getGroupID() { return groupID; }
+    public void setGroupID(String groupID) { this.groupID = groupID; }
+}
+
+
+dataset.xml
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<dataset>
+    <!-- cmc_sbsb_subsc -->
+    <cmc_sbsb_subsc SBSB_ID="SUB123" SBSB_CK="1" GRGR_CK="GRP001"/>
+
+    <!-- cmc_meme_member -->
+    <cmc_meme_member MEME_CK="1" SBSB_CK="1"/>
+
+    <!-- cmc_mepe_prcs_elig -->
+    <cmc_mepe_prcs_elig MEME_CK="1" GRGR_CK="GRP001" CSCS_ID="CS001" CSPI_ID="PI001" CSPD_CAT="CAT1"
+                         MEPE_EFF_DT="2023-01-01" MEPE_TERM_DT="2023-12-31"/>
+
+    <!-- CMC_CSPI_CS_PLAN -->
+    <CMC_CSPI_CS_PLAN GRGR_CK="GRP001" CSCS_ID="CS001" CSPI_ID="PI001" CSPD_CAT="CAT1"
+                      CSPI_ITS_PREFIX="ABC" CSPI_EFF_DT="2023-01-01" CSPI_TERM_DT="2023-12-31"/>
+</dataset>
+
+
+
+
+Factesmemberdaotest
+
+
+import org.dbunit.IDatabaseTester;
+import org.dbunit.JdbcDatabaseTester;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+import org.h2.tools.RunScript;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.io.File;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+@SpringBootTest
+public class FacetsMemberDAOTest {
+    private static final Logger log = LoggerFactory.getLogger(FacetsMemberDAOTest.class);
+    private static final String JDBC_DRIVER = "org.h2.Driver";
+    private static final String JDBC_URL = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1";
+    private static final String USER = "sa";
+    private static final String PASSWORD = "";
+
+    private IDatabaseTester databaseTester;
+    private FacetsMemberDAO dao;
+
+    @BeforeAll
+    public static void createSchema() throws Exception {
+        // Create schema in H2
+        Connection conn = DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+        RunScript.execute(conn, new java.io.StringReader(
+                "CREATE TABLE cmc_sbsb_subsc (SBSB_ID VARCHAR(255), SBSB_CK VARCHAR(255), GRGR_CK VARCHAR(255));" +
+                        "CREATE TABLE cmc_meme_member (MEME_CK VARCHAR(255), SBSB_CK VARCHAR(255));" +
+                        "CREATE TABLE cmc_mepe_prcs_elig (MEME_CK VARCHAR(255), GRGR_CK VARCHAR(255), CSCS_ID VARCHAR(255), CSPI_ID VARCHAR(255), CSPD_CAT VARCHAR(255), MEPE_EFF_DT DATE, MEPE_TERM_DT DATE);" +
+                        "CREATE TABLE CMC_CSPI_CS_PLAN (GRGR_CK VARCHAR(255), CSCS_ID VARCHAR(255), CSPI_ID VARCHAR(255), CSPD_CAT VARCHAR(255), CSPI_ITS_PREFIX VARCHAR(255), CSPI_EFF_DT DATE, CSPI_TERM_DT DATE);"
+        ));
+        conn.close();
+    }
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        // Initialize DbUnit with H2 connection
+        databaseTester = new JdbcDatabaseTester(JDBC_DRIVER, JDBC_URL, USER, PASSWORD);
+        IDataSet dataSet = new FlatXmlDataSetBuilder().build(new File("src/test/resources/dataset.xml"));
+        databaseTester.setDataSet(dataSet);
+        databaseTester.onSetup();
+
+        // Override DAO's getConnection() to use H2
+        dao = new FacetsMemberDAO() {
+            @Override
+            protected Connection getConnection() throws SQLException {
+                return DriverManager.getConnection(JDBC_URL, USER, PASSWORD);
+            }
+        };
+    }
+
+    @Test
+    public void testGetIdAndPrefixBySbsbIdDateAndPrefix() throws Exception {
+        // Arrange
+        String subscriberID = "SUB123";
+        String prefix = "ABC";
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Date searchStartDate = sdf.parse("2023-06-01");
+        Date searchEndDate = sdf.parse("2023-06-30");
+
+        // Act
+        List<FacetsMemberAmerigroupIDDto> result = dao.getIdAndPrefixBySbsbIdDateAndPrefix(subscriberID, prefix, searchStartDate, searchEndDate);
+
+        // Assert
+        assertEquals(1, result.size(), "Should return one record");
+        FacetsMemberAmerigroupIDDto dto = result.get(0);
+        assertEquals("SUB123", dto.getAmerigroupID(), "Amerigroup ID should match");
+        assertEquals("GRP001", dto.getGroupID(), "Group ID should match");
+    }
+}
