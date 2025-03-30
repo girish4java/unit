@@ -1,3 +1,18 @@
+java.lang.AbstractMethodError: Receiver class org.springframework.boot.logging.logback.RootLogLevelConfigurator does not define or inherit an implementation of the resolved method 'abstract void configure(ch.qos.logback.classic.LoggerContext)' of interface ch.qos.logback.classic.spi.Configurator.
+
+	at ch.qos.logback.classic.util.ContextInitializer.autoConfig(ContextInitializer.java:140)
+	at org.slf4j.impl.StaticLoggerBinder.init(StaticLoggerBinder.java:84)
+	at org.slf4j.impl.StaticLoggerBinder.<clinit>(StaticLoggerBinder.java:55)
+	at org.slf4j.LoggerFactory.bind(LoggerFactory.java:150)
+	at org.slf4j.LoggerFactory.performInitialization(LoggerFactory.java:124)
+	at org.slf4j.LoggerFactory.getILoggerFactory(LoggerFactory.java:417)
+	at org.slf4j.LoggerFactory.getLogger(LoggerFactory.java:362)
+	at org.slf4j.LoggerFactory.getLogger(LoggerFactory.java:388)
+	at com.elevancehealth.dckr.microsvc.aksgbdsoamembereligibility.FacetsMemberDAOTest.<clinit>(FacetsMemberDAOTest.java:29)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:568)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+***************
+
 <dependencies>
     <!-- Spring Boot Starter Test -->
     <dependency>
