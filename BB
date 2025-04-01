@@ -1,0 +1,105 @@
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.dbunit</groupId>
+    <artifactId>dbunit</artifactId>
+    <version>2.7.0</version>
+    <scope>test</scope>
+</dependency>
+
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.List;
+
+import javax.sql.DataSource;
+
+import org.dbunit.DatabaseUnitException;
+import org.dbunit.IDatabaseTester;
+import org.dbunit.database.IDatabaseConnection;
+import org.dbunit.database.DatabaseOperation;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.xml.FlatXmlDataSetBuilder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+public class YourDaoTest {
+
+    @Mock
+    private DataSource dataSource;
+
+    @InjectMocks
+    private YourDao yourDao; // Replace with your actual DAO class name
+
+    private IDatabaseTester databaseTester;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        MockitoAnnotations.openMocks(this);
+        // Initialize DBUnit
+        IDatabaseConnection connection = new DatabaseConnection(dataSource.getConnection());
+        IDataSet dataSet = new FlatXmlDataSetBuilder().build(getClass().getResourceAsStream("/test-dataset.xml"));
+        databaseTester = new DatabaseTester(connection);
+        databaseTester.setDataSet(dataSet);
+        databaseTester.setSetUpOperation(DatabaseOperation.CLEAN_INSERT);
+        databaseTester.setTearDownOperation(DatabaseOperation.DELETE_ALL);
+        databaseTester.setUp();
+    }
+
+    @Test
+    public void testGetIdAndPrefixBySbsbIdDateAndPrefix() throws SQLException {
+        // Given
+        String subscriberID = "12345";
+        String prefix = "PREFIX";
+        Date searchStartDate = new Date();
+        Date searchEndDate = new Date();
+
+        // When
+        List<FacetsMemberAmerigroupIDDto> result = yourDao.getIdAndPrefixBySbsbIdDateAndPrefix(subscriberID, prefix, searchStartDate, searchEndDate);
+
+        // Then
+        assertEquals(1, result.size());
+        assertEquals("12345", result.get(0).amerigroupID);
+        assertEquals("GRGR_CK_VALUE", result.get(0).groupID); // Replace with expected value
+    }
+}
+
+
+<dataset>
+    <cmc_sbsb_subsc>
+        <SBSB_ID>12345</SBSB_ID>
+        <SBSB_CK>1</SBSB_CK>
+    </cmc_sbsb_subsc>
+    <cmc_meme_member>
+        <sbsb_ck>1</sbsb_ck>
+        <meme_ck>1</meme_ck>
+    </cmc_meme_member>
+    <cmc_mepe_prcs_elig>
+        <meme_ck>1</meme_ck>
+        <grgr_ck>GRGR_CK_VALUE</grgr_ck>
+        <cscs_ID>1</cscs_ID>
+        <cspi_ID>1</cspi_ID>
+        <cspd_cat>CAT1</cspd_cat>
+        <mepe_eff_dt>2025-01-01</mepe_eff_dt>
+        <mepe_term_dt>2025-12-31</mepe_term_dt>
+    </cmc_mepe_prcs_elig>
+    <CMC_CSPI_CS_PLAN>
+        <grgr_ck>GRGR_CK_VALUE</grgr_ck>
+        <cscs_ID>1</cscs_ID>
+        <cspi_ID>1</cspi_ID>
+        <cspd_cat>CAT1</cspd_cat>
+        <cspi_eff_dt>2025-01-01</cspi_eff_dt>
+        <cspi_term_dt>2025-12-31</cspi_term_dt>
+        <
